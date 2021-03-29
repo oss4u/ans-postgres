@@ -1,0 +1,55 @@
+- name: Configure repmgr.conf
+  template:
+    src: repmgr.conf
+    dest: /etc/repmgr.conf
+    
+- name: Check if already running in cluster mode
+  become: true
+  become_user: postgres
+  community.general.postgresql_query:
+    db: repmgr
+    query: SELECT * FROM pg_stat_replication;
+  ignore_errors: yes
+  register: cluster_init
+    
+- name: DEBUG
+  debug:
+    msg: "cluster_init {{cluster_init}}"
+
+- name: stop postgres
+  systemd:
+    state: stopped
+    name: postgresql
+  when: cluster_init.failed
+
+- name: delete databases
+  command: rm -rf /var/lib/postgresql/12/main
+  when: cluster_init.failed
+    
+# - name: Check if repmgr clone works
+#   become: true
+#   become_user: postgres
+#   command: repmgr -h db01.int.sys-int.de -U repmgr -d repmgr -f /etc/repmgr.conf standby clone --dry-run
+#   ignore_errors: yes
+#   register: repmgr_init
+#  when: cluster_init.failed
+  
+- name: repmgr clone
+  become: true
+  become_user: postgres
+  command: repmgr -h db01.int.sys-int.de -U repmgr -d repmgr -f /etc/repmgr.conf standby clone
+  when: cluster_init.failed
+#  whand cluster_init.failed#
+
+- name: restart postgres
+  systemd:
+    state: started
+    name: postgresql
+  when: cluster_init.failed
+  
+- name: Register Node
+  become: true
+  become_user: postgres
+  command: repmgr -f /etc/repmgr.conf standby register
+  when: cluster_init.failed
+  

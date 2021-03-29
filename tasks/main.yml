@@ -1,0 +1,172 @@
+---
+# tasks file for postgres
+
+- name: Add an Apt signing key for PostgreSQL
+  apt_key:
+    url: https://www.pgadmin.org/static/packages_pgadmin_org.pub
+    state: present
+    
+- name: Add an Apt signing key for PgAdmin4
+  apt_key:
+    url: https://www.pgadmin.org/static/packages_pgadmin_org.pub
+    state: present
+
+- name: Add an Apt signing key for RepMgr
+  apt_key:
+    data: "{{ lookup('file', 'repmgr-key.asc') }}"
+    state: present
+
+- name: Add keys for RepMgr
+  apt: 
+    deb: https://dl.2ndquadrant.com/default/release/browse/apt/pool/main/2/2ndquadrant-repository-keys/2ndquadrant-repository-keys_2020.1-4.focal+1_all.deb
+
+- name: Install PgAdmin4-Repository
+  apt_repository:
+    repo: deb https://ftp.postgresql.org/pub/pgadmin/pgadmin4/apt/focal pgadmin4 main
+    state: present
+  register: pgadmin_repo
+  
+- name: Install PostgreSQL-Repository
+  apt_repository:
+    repo: deb http://apt.postgresql.org/pub/repos/apt focal-pgdg main
+    state: present
+  register: postgresql_repo
+  
+- name: Install RepMgr-Repository
+  apt_repository:
+    repo: deb https://dl.2ndquadrant.com/default/release/apt focal-2ndquadrant main
+    state: present
+  register: repmgr_repo
+  
+- name: Update repositories cache
+  apt:
+    update_cache: yes
+  when: postgresql_repo.changed or pgadmin_repo.changed or repmgr_repo.changed
+
+- name: Install PostgreSQL
+  apt:
+    name: postgresql-12
+    state: present
+  register: postgresql_install
+  when: postgres_cluster or postgres_repmgr
+  
+- name: Configure Interfaces
+  lineinfile:
+    path: /etc/postgresql/12/main/postgresql.conf
+    regexp: "^#listen_addresses" 
+    line: "listen_addresses = '*'" 
+    state: present 
+    backup: yes
+  register: postgresql_reconfig_interfaces
+  
+- name: Set access permissions
+  community.general.postgresql_pg_hba:
+    dest: /etc/postgresql/12/main/pg_hba.conf
+    contype: local
+    databases: replication
+    users: repmgr
+    method: trust
+    create: no
+  register: postgresql_reconfig_hba
+
+- name: Set access permissions
+  community.general.postgresql_pg_hba:
+    dest: /etc/postgresql/12/main/pg_hba.conf
+    contype: host
+    databases: replication
+    users: repmgr
+    source: 127.0.0.1/32
+    method: trust
+    create: no
+  register: postgresql_reconfig_hba
+
+- name: Set access permissions
+  community.general.postgresql_pg_hba:
+    dest: /etc/postgresql/12/main/pg_hba.conf
+    contype: host
+    databases: replication
+    users: repmgr
+    source: 10.0.1.0/24
+    method: trust
+    create: no
+  register: postgresql_reconfig_hba
+    
+- name: Set access permissions
+  community.general.postgresql_pg_hba:
+    dest: /etc/postgresql/12/main/pg_hba.conf
+    contype: local
+    databases: repmgr
+    users: repmgr
+#    source: ::1
+    method: trust
+    create: no
+  register: postgresql_reconfig_hba
+
+- name: Set access permissions
+  community.general.postgresql_pg_hba:
+    dest: /etc/postgresql/12/main/pg_hba.conf
+    contype: host
+    databases: repmgr
+    users: repmgr
+    source: 127.0.0.1/32
+    method: trust
+    create: no
+  register: postgresql_reconfig_hba
+
+- name: Set access permissions
+  community.general.postgresql_pg_hba:
+    dest: /etc/postgresql/12/main/pg_hba.conf
+    contype: host
+    databases: repmgr
+    users: repmgr
+    source: 10.0.1.0/24
+    method: trust
+    create: no
+  register: postgresql_reconfig_hba
+  
+- name: restart postgres
+  systemd:
+    state: restarted
+    daemon_reload: yes
+    name: postgresql
+  when: postgresql_reconfig_interfaces.changed or postgresql_reconfig_hba.changed
+
+- name: Install a list of packages
+  apt:
+    pkg:
+      - virtualenv
+      - libpq-dev 
+      - python-dev
+  
+- name: Install PgAdmin4
+  apt:
+    pkg:
+      - pgadmin4-apache2 
+      - pgadmin4-common 
+      - python3-psycopg2
+  register: pgadmin4_install
+  
+- name: Configure PgAdmin4
+  template:
+    src: config.py
+    dest: /usr/share/pgadmin4/web/config.py
+  notify: restart apache2
+  
+- name: Install RepMgr for PG 12
+  apt:
+    name: postgresql-12-repmgr
+    state: present
+  register: postgresql_repmgr_install
+  
+  
+- name: Configure MASTER
+  include: master.yml
+  when: (postgres_master == true)
+  
+- name: Configure SLAVE
+  include: slave.yml
+  when: (postgres_master == false)
+
+- name: Configure RepMgr
+  include: repmgr.yml
+  when: postgres_repmgr

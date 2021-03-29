@@ -1,0 +1,42 @@
+- name: Configure Replication
+  template:
+    src: postgresql.replication.conf
+    dest: /etc/postgresql/12/main/postgresql.replication.conf
+  
+- name: Configure Replication
+  lineinfile:
+    path: /etc/postgresql/12/main/postgresql.conf
+    line: "include 'postgresql.replication.conf'"
+
+- name: Create repmgr db
+  become: true
+  become_user: postgres
+  community.general.postgresql_db:
+    name: repmgr
+
+- name: Create repmgr user
+  become: true
+  become_user: postgres
+  community.general.postgresql_user:
+    db: repmgr
+    name: repmgr
+    password: "{{repmgr.password}}"
+    role_attr_flags: SUPERUSER
+  
+- name: Configure repmgr.conf
+  template:
+    src: repmgr.conf
+    dest: /etc/repmgr.conf
+    
+- name: Check if repmgr is initialized
+  become: true
+  become_user: postgres
+  command: repmgr -f /etc/repmgr.conf cluster show
+  ignore_errors: yes
+  register: repmgr_init
+  
+- name: Init repmgr on node
+  become: true
+  become_user: postgres
+  command: repmgr -f /etc/repmgr.conf primary register
+  when: repmgr_init.rc == 1
