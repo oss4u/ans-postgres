@@ -1,5 +1,5 @@
 ---
-# defaults file for postgres
+# defaults file for ans-postgres
 postgres_master: false
 postgres_repmgr: false
 

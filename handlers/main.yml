@@ -1,5 +1,5 @@
 ---
-# handlers file for postgres
+# handlers file for ans-postgres
 - name: restart apache2
   systemd:
     state: restarted
