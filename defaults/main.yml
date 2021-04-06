@@ -3,7 +3,7 @@
 postgres_master: false
 postgres_repmgr: false
 postgres_cluster: false
-
+postgres_version: 13
 repmgr:
   password: !vault |
           $ANSIBLE_VAULT;1.1;AES256

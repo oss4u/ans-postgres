@@ -23,7 +23,7 @@
   when: cluster_init.failed
 
 - name: delete databases
-  command: rm -rf /var/lib/postgresql/12/main
+  command: "rm -rf /var/lib/postgresql/{{ postgres_version }}/main"
   when: cluster_init.failed
     
 # - name: Check if repmgr clone works

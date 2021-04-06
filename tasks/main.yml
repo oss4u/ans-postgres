@@ -50,14 +50,14 @@
 
 - name: Install PostgreSQL
   apt:
-    name: postgresql-12
+    name: "postgresql-{{ postgres_version }}"
     state: present
   register: postgresql_install
   when: postgres_cluster or postgres_repmgr
   
 - name: Configure Interfaces
   lineinfile:
-    path: /etc/postgresql/12/main/postgresql.conf
+    path: "/etc/postgresql/{{ postgres_version }}/main/postgresql.conf"
     regexp: "^#listen_addresses" 
     line: "listen_addresses = '*'" 
     state: present 
@@ -66,7 +66,7 @@
   
 - name: Set access permissions
   community.general.postgresql_pg_hba:
-    dest: /etc/postgresql/12/main/pg_hba.conf
+    dest: "/etc/postgresql/{{ postgres_version }}/main/pg_hba.conf"
     contype: local
     databases: replication
     users: repmgr
@@ -76,7 +76,7 @@
 
 - name: Set access permissions
   community.general.postgresql_pg_hba:
-    dest: /etc/postgresql/12/main/pg_hba.conf
+    dest: "/etc/postgresql/{{ postgres_version }}/main/pg_hba.conf"
     contype: host
     databases: replication
     users: repmgr
@@ -87,7 +87,7 @@
 
 - name: Set access permissions
   community.general.postgresql_pg_hba:
-    dest: /etc/postgresql/12/main/pg_hba.conf
+    dest: "/etc/postgresql/{{ postgres_version }}/main/pg_hba.conf"
     contype: host
     databases: replication
     users: repmgr
@@ -98,7 +98,7 @@
     
 - name: Set access permissions
   community.general.postgresql_pg_hba:
-    dest: /etc/postgresql/12/main/pg_hba.conf
+    dest: "/etc/postgresql/{{ postgres_version }}/main/pg_hba.conf"
     contype: local
     databases: repmgr
     users: repmgr
@@ -109,7 +109,7 @@
 
 - name: Set access permissions
   community.general.postgresql_pg_hba:
-    dest: /etc/postgresql/12/main/pg_hba.conf
+    dest: "/etc/postgresql/{{ postgres_version }}/main/pg_hba.conf"
     contype: host
     databases: repmgr
     users: repmgr
@@ -120,7 +120,7 @@
 
 - name: Set access permissions
   community.general.postgresql_pg_hba:
-    dest: /etc/postgresql/12/main/pg_hba.conf
+    dest: "/etc/postgresql/{{ postgres_version }}/main/pg_hba.conf"
     contype: host
     databases: repmgr
     users: repmgr
@@ -146,8 +146,7 @@
 - name: Install PgAdmin4
   apt:
     pkg:
-      - pgadmin4-apache2 
-      - pgadmin4-common 
+      - pgadmin4-web
       - python3-psycopg2
   register: pgadmin4_install
   
@@ -157,9 +156,9 @@
     dest: /usr/share/pgadmin4/web/config.py
   notify: restart apache2
   
-- name: Install RepMgr for PG 12
+- name: "Install RepMgr for PG {{ postgres_version }}"
   apt:
-    name: postgresql-12-repmgr
+    name: "postgresql-{{ postgres_version }}-repmgr"
     state: present
   register: postgresql_repmgr_install
   

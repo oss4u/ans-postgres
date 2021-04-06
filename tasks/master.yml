@@ -1,11 +1,11 @@
 - name: Configure Replication
   template:
     src: postgresql.replication.conf
-    dest: /etc/postgresql/12/main/postgresql.replication.conf
+    dest: "/etc/postgresql/{{ postgres_version }}/main/postgresql.replication.conf"
   
 - name: Configure Replication
   lineinfile:
-    path: /etc/postgresql/12/main/postgresql.conf
+    path: "/etc/postgresql/{{ postgres_version }}/main/postgresql.conf"
     line: "include 'postgresql.replication.conf'"
 
 - name: Create repmgr db
