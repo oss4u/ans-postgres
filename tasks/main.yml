@@ -155,6 +155,7 @@
     src: config.py
     dest: /usr/share/pgadmin4/web/config.py
   notify: restart apache2
+  when: ldap.enabled != false
   
 - name: "Install RepMgr for PG {{ postgres_version }}"
   apt:

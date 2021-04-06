@@ -11,10 +11,6 @@
     query: SELECT * FROM pg_stat_replication;
   ignore_errors: yes
   register: cluster_init
-    
-- name: DEBUG
-  debug:
-    msg: "cluster_init {{cluster_init}}"
 
 - name: stop postgres
   systemd:
