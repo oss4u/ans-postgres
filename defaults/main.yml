@@ -2,6 +2,7 @@
 # defaults file for ans-postgres
 postgres_master: false
 postgres_repmgr: false
+postgres_cluster: false
 
 repmgr:
   password: !vault |
