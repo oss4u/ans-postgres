@@ -3,6 +3,11 @@
 
 - name: Add an Apt signing key for PostgreSQL
   apt_key:
+    url: https://www.postgresql.org/media/keys/ACCC4CF8.asc
+    state: present
+
+- name: Add an Apt signing key for PostgreSQL
+  apt_key:
     url: https://www.pgadmin.org/static/packages_pgadmin_org.pub
     state: present
     
